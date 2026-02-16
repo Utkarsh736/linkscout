@@ -7,7 +7,7 @@ import (
 
 // crawlPage recursively crawls pages starting from rawCurrentURL
 func (cfg *config) crawlPage(rawCurrentURL string) {
-	// Limit max pages (safety mechanism)
+	// Check if we've reached max pages limit (thread-safe check)
 	cfg.mu.Lock()
 	if len(cfg.pages) >= cfg.maxPages {
 		cfg.mu.Unlock()
@@ -42,7 +42,7 @@ func (cfg *config) crawlPage(rawCurrentURL string) {
 		return
 	}
 
-	// Print progress
+	// Print progress (important for debugging!)
 	fmt.Printf("Crawling: %s\n", rawCurrentURL)
 
 	// Fetch the HTML from the current URL
