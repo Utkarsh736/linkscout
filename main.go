@@ -12,7 +12,7 @@ func main() {
 	// Get command line arguments
 	args := os.Args[1:]
 
-	// Validate number of arguments (now we need 3: URL, concurrency, maxPages)
+	// Validate number of arguments
 	if len(args) < 3 {
 		fmt.Println("not enough arguments provided")
 		fmt.Println("usage: crawler <URL> <maxConcurrency> <maxPages>")
@@ -27,13 +27,13 @@ func main() {
 
 	// Parse arguments
 	rawBaseURL := args[0]
-	
+
 	maxConcurrency, err := strconv.Atoi(args[1])
 	if err != nil {
 		fmt.Printf("error parsing maxConcurrency: %v\n", err)
 		os.Exit(1)
 	}
-	
+
 	maxPages, err := strconv.Atoi(args[2])
 	if err != nil {
 		fmt.Printf("error parsing maxPages: %v\n", err)
@@ -45,7 +45,7 @@ func main() {
 		fmt.Println("maxConcurrency must be at least 1")
 		os.Exit(1)
 	}
-	
+
 	if maxPages < 1 {
 		fmt.Println("maxPages must be at least 1")
 		os.Exit(1)
@@ -66,7 +66,7 @@ func main() {
 
 	// Configure the crawler
 	cfg := &config{
-		pages:              make(map[string]int),
+		pages:              make(map[string]PageData),
 		baseURL:            baseURL,
 		mu:                 &sync.Mutex{},
 		concurrencyControl: make(chan struct{}, maxConcurrency),
@@ -80,20 +80,26 @@ func main() {
 		defer cfg.wg.Done()
 		cfg.concurrencyControl <- struct{}{} // Acquire semaphore
 		defer func() { <-cfg.concurrencyControl }() // Release semaphore
-		
+
 		cfg.crawlPage(rawBaseURL)
 	}()
 
 	// Wait for all goroutines to finish
 	cfg.wg.Wait()
 
-	// Print the results
+	// Print completion message
 	fmt.Println("\n=============================")
 	fmt.Println("CRAWL COMPLETE")
 	fmt.Println("=============================")
-	fmt.Printf("Found %d unique pages:\n\n", len(cfg.pages))
+	fmt.Printf("Found %d unique pages\n\n", len(cfg.pages))
 
-	for pageURL, count := range cfg.pages {
-		fmt.Printf("%d - %s\n", count, pageURL)
+	// Write CSV report
+	fmt.Println("Writing report to report.csv...")
+	err = writeCSVReport(cfg.pages, "report.csv")
+	if err != nil {
+		fmt.Printf("Error writing CSV report: %v\n", err)
+		os.Exit(1)
 	}
+
+	fmt.Println("Report successfully written to report.csv")
 }

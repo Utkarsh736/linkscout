@@ -35,16 +35,6 @@ func (cfg *config) crawlPage(rawCurrentURL string) {
 		return
 	}
 
-	// Check if this is the first visit to this page
-	isFirst := cfg.addPageVisit(normalizedURL)
-	if !isFirst {
-		// Already visited - don't crawl again
-		return
-	}
-
-	// Print progress (important for debugging!)
-	fmt.Printf("Crawling: %s\n", rawCurrentURL)
-
 	// Fetch the HTML from the current URL
 	html, err := getHTML(rawCurrentURL)
 	if err != nil {
@@ -52,15 +42,21 @@ func (cfg *config) crawlPage(rawCurrentURL string) {
 		return
 	}
 
-	// Extract all URLs from the HTML
-	urls, err := getURLsFromHTML(html, currentURL)
-	if err != nil {
-		fmt.Printf("Error extracting URLs from %s: %v\n", rawCurrentURL, err)
+	// Extract page data
+	pageData := extractPageData(html, rawCurrentURL)
+
+	// Check if this is the first visit to this page
+	isFirst := cfg.addPageVisit(normalizedURL, pageData)
+	if !isFirst {
+		// Already visited - don't crawl again
 		return
 	}
 
+	// Print progress
+	fmt.Printf("Crawling: %s\n", rawCurrentURL)
+
 	// Recursively crawl each URL found on the page (CONCURRENTLY!)
-	for _, nextURL := range urls {
+	for _, nextURL := range pageData.OutgoingLinks {
 		cfg.wg.Add(1)
 		go func(url string) {
 			defer cfg.wg.Done()

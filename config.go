@@ -6,7 +6,7 @@ import (
 )
 
 type config struct {
-	pages              map[string]int
+	pages              map[string]PageData  // Changed from map[string]int
 	baseURL            *url.URL
 	mu                 *sync.Mutex
 	concurrencyControl chan struct{}
@@ -16,19 +16,17 @@ type config struct {
 
 // addPageVisit safely adds a page visit to the map
 // Returns true if this is the first visit to this page
-func (cfg *config) addPageVisit(normalizedURL string) (isFirst bool) {
+func (cfg *config) addPageVisit(normalizedURL string, pageData PageData) (isFirst bool) {
 	cfg.mu.Lock()
 	defer cfg.mu.Unlock()
 
 	// Check if page already exists
-	if count, exists := cfg.pages[normalizedURL]; exists {
-		// Already visited - increment count
-		cfg.pages[normalizedURL] = count + 1
+	if _, exists := cfg.pages[normalizedURL]; exists {
+		// Already visited - don't update, just return false
 		return false
 	}
 
 	// First visit - add to map
-	cfg.pages[normalizedURL] = 1
+	cfg.pages[normalizedURL] = pageData
 	return true
 }
-

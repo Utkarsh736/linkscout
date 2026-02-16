@@ -18,3 +18,4 @@ crawler
 # Dependencies
 vendor/
 go.work
+report.csv
