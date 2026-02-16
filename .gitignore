@@ -1,1 +1,19 @@
-bin/\n*.test\n.env
+# Binary
+linkscout
+
+# Test binaries & output
+*.test
+*.out
+
+# OS files
+.DS_Store
+
+# Build artifacts
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Dependencies
+vendor/
+go.work
